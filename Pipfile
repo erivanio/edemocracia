@@ -32,6 +32,8 @@ lxml = "< 3.4.99"
 django-macros = "*"
 django-widget-tweaks = "*"
 pydiscourse = "*"
+gunicorn = "*"
+"psycopg2" = "*"
 
 
 [requires]
