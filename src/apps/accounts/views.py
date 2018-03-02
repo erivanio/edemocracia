@@ -16,11 +16,12 @@ from django.views.generic import UpdateView
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
 from django.urls import reverse
+import requests
 
 
 class CustomRegistrationView(BaseRegistrationView):
     http_method_names = ['post']
-    SEND_ACTIVATION_EMAIL = getattr(settings, 'SEND_ACTIVATION_EMAIL', True)
+    SEND_ACTIVATION_EMAIL = False
     success_url = 'registration_complete'
     template_name = 'registration/custom_registration_form.html'
 
@@ -33,7 +34,10 @@ class CustomRegistrationView(BaseRegistrationView):
     def form_invalid(self, form):
         response = super().form_invalid(form)
         if self.request.is_ajax():
-            return JsonResponse(form.errors, status=400)
+            data = {
+                'data': form.errors,
+            }
+            return JsonResponse(data, status=400)
         else:
             return response
 
@@ -81,6 +85,17 @@ class CustomRegistrationView(BaseRegistrationView):
             send_email=self.SEND_ACTIVATION_EMAIL,
             request=self.request,
         )
+
+        activation_key = RegistrationProfile.objects.get(
+            user=new_user).activation_key
+        activation_link = site.domain + '/accounts/activate/' + \
+            activation_key + '/'
+        payload = {'nome': new_user.first_name,
+                   'token': activation_link,
+                   'email': new_user.email}
+
+        requests.post("http://example.com/", data=payload)  # to send email
+
         signals.user_registered.send(sender=self.__class__,
                                      user=new_user,
                                      request=self.request)
