@@ -88,13 +88,15 @@ class CustomRegistrationView(BaseRegistrationView):
 
         activation_key = RegistrationProfile.objects.get(
             user=new_user).activation_key
-        activation_link = site.domain + '/accounts/activate/' + \
-            activation_key + '/'
-        payload = {'nome': new_user.first_name,
-                   'token': activation_link,
+
+        payload = {'Token': 'd04f2153c158f0f2b17fbf43dac9489f',
+                   'Identificador': 'Cadastro no Wikilegis',
+                   'WIKILEGIS_token': activation_key,
+                   'nome': new_user.first_name,
                    'email': new_user.email}
 
-        requests.post("http://example.com/", data=payload)  # to send email
+        requests.post("https://www.rdstation.com.br/api/1.3/conversions",
+                      data=payload)  # to send email
 
         signals.user_registered.send(sender=self.__class__,
                                      user=new_user,
