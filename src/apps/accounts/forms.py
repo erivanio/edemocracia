@@ -144,9 +144,12 @@ class CustomPasswordResetForm(forms.Form):
                 **(extra_email_context or {}),
             }
 
-            import ipdb; ipdb.set_trace()
-            payload = {'nome': user.first_name,
-                       'link': domain + '/accounts/password/reset/confirm/' + context['uid'] + '/' + context['token'] + '/',
-                       'email': email}
+            payload = {'token_rdstation': 'd04f2153c158f0f2b17fbf43dac9489f',
+                       'identificador': 'Recuperação de senha no Wikilegis',
+                       'email': email,
+                       'WIKILEGIS_token': context['token'],
+                       'WIKILEGIS_UID': context['uid'],
+                       'nome': user.first_name}
 
-            requests.post("http://example.com/", data=payload)  # to send email
+            requests.post("https://www.rdstation.com.br/api/1.3/conversions",
+                          data=payload)  # to send email
