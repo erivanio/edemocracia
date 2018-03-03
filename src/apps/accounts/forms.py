@@ -1,8 +1,13 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django import forms
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from apps.accounts.models import UserProfile
+import requests
 
 
 class SignUpAjaxForm(forms.ModelForm):
@@ -102,3 +107,46 @@ class UserProfileForm(forms.ModelForm):
         if commit:
             instance.user.save()
         return instance
+
+
+class CustomPasswordResetForm(forms.Form):
+    email = forms.EmailField(label=_("Email"), max_length=254)
+
+    def get_users(self, email):
+        active_users = User._default_manager.filter(**{
+            '%s__iexact' % User.get_email_field_name(): email,
+            'is_active': True,
+        })
+        return (u for u in active_users if u.has_usable_password())
+
+    def save(self, domain_override=None,
+             subject_template_name='registration/password_reset_subject.txt',
+             email_template_name='registration/password_reset_email.html',
+             use_https=False, token_generator=default_token_generator,
+             from_email=None, request=None, html_email_template_name=None,
+             extra_email_context=None):
+        email = self.cleaned_data["email"]
+        for user in self.get_users(email):
+            if not domain_override:
+                current_site = get_current_site(request)
+                site_name = current_site.name
+                domain = current_site.domain
+            else:
+                site_name = domain = domain_override
+            context = {
+                'email': email,
+                'domain': domain,
+                'site_name': site_name,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)).decode(),
+                'user': user,
+                'token': token_generator.make_token(user),
+                'protocol': 'https' if use_https else 'http',
+                **(extra_email_context or {}),
+            }
+
+            import ipdb; ipdb.set_trace()
+            payload = {'nome': user.first_name,
+                       'link': domain + '/accounts/password/reset/confirm/' + context['uid'] + '/' + context['token'] + '/',
+                       'email': email}
+
+            requests.post("http://example.com/", data=payload)  # to send email
